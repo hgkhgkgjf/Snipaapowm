@@ -3,35 +3,36 @@ permissions:
 
 on:
   schedule:
-    - cron: "0 0 * * *" # every day
+    - cron: "0 0 * * *" # 每天同步
   workflow_dispatch:
   watch:
     types: started
 
 jobs:
   sync_latest_from_upstream:
-    name: Sync latest commits from upstream repo
+    name: Sync latest commits from upstream repo (Main Branch)
     runs-on: ubuntu-latest
     if: ${{ github.event.repository.fork }}
 
     steps:
-      # Step 1: run a standard checkout action
+      # Step 1: 运行标准 checkout 动作
       - name: Checkout target repo
         uses: actions/checkout@v3
 
-      # Step 2: run the sync action
-      - name: Sync upstream changes
-        id: sync
+      # Step 2: 同步 main 分支
+      - name: Sync upstream changes from main branch
+        id: sync_main
         uses: aormsby/Fork-Sync-With-Upstream-action@v3.4
         with:
-          upstream_sync_repo: cmliu/CF-Workers-BPSUB   # Change this line to the new repository
-          upstream_sync_branch: main
-          target_sync_branch: main
-          target_repo_token: ${{ secrets.GITHUB_TOKEN }} # automatically generated, no need to set
+          upstream_sync_repo: cmliu/CF-Workers-BPSUB   # 上游仓库
+          upstream_sync_branch: main                  # 主分支
+          target_sync_branch: main                    # 同步到本地的主分支
+          target_repo_token: ${{ secrets.GITHUB_TOKEN }} # 自动生成的 token，无需设置
 
-          # Set test_mode true to run tests instead of the true action!!
+          # 开启 test_mode 为 true 仅用于测试，不会进行真正同步
           test_mode: false
 
+      # Step 3: 检查同步状态
       - name: Sync check
         if: failure()
         run: |
