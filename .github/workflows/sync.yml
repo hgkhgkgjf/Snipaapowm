@@ -1,0 +1,41 @@
+permissions:
+  contents: write
+
+on:
+  schedule:
+    - cron: "0 0 * * *" # 每天同步
+  workflow_dispatch:
+  watch:
+    types: started
+
+jobs:
+  sync_latest_from_upstream:
+    name: Sync latest commits from upstream repo (Beta Branch)
+    runs-on: ubuntu-latest
+    if: ${{ github.event.repository.fork }}
+
+    steps:
+      # Step 1: 运行标准 checkout 动作
+      - name: Checkout target repo
+        uses: actions/checkout@v3
+
+      # Step 2: 同步 beta 分支
+      - name: Sync upstream changes from beta branch
+        id: sync_beta
+        uses: aormsby/Fork-Sync-With-Upstream-action@v3.4
+        with:
+          upstream_sync_repo: cmliu/CF-Workers-BPSUB   # 上游仓库
+          upstream_sync_branch: beta                  # Beta 分支
+          target_sync_branch: beta                    # 同步到本地的 beta 分支
+          target_repo_token: ${{ secrets.GITHUB_TOKEN }} # 自动生成的 token，无需设置
+
+          # 开启 test_mode 为 true 仅用于测试，不会进行真正同步
+          test_mode: false
+
+      # Step 3: 检查同步状态
+      - name: Sync check
+        if: failure()
+        run: |
+          echo "[Error] 由于上游仓库的 workflow 文件变更，导致 GitHub 自动暂停了本次自动更新，你需要手动 Sync Fork 一次."
+          echo "[Error] Due to a change in the workflow file of the upstream repository, GitHub has automatically suspended the scheduled automatic update. You need to manually sync your fork."
+          exit 1
