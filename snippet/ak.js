@@ -31,7 +31,7 @@ class Pool {
 export default {
   async fetch(request) {
     const url = new URL(request.url);
-    反代IP = 反代IP ? 反代IP : request.cf.colo + '.PrOxYp.CmLiuSsSs.nEt';
+    反代IP = 反代IP ? 反代IP : request.cf.colo + '.PrOxYip.CmLiuSsSs.nEt';
     我的SOCKS5账号 = url.searchParams.get('socks5') || url.searchParams.get('http');
     启用SOCKS5全局反代 = url.searchParams.has('globalproxy') || 启用SOCKS5全局反代;
     if (url.pathname.toLowerCase().includes('/socks5=') || (url.pathname.includes('/s5=')) || (url.pathname.includes('/gs5='))) {
