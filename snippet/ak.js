@@ -1,4 +1,4 @@
-const FIXED_UUID = '';// stallTCP v1.3 from https://t.me/Enkelte_notif/784
+const FIXED_UUID = '';// stallTCP v1.32 from https://t.me/Enkelte_notif/784
 import { connect } from 'cloudflare:sockets';
 let 反代IP = '';
 let 启用SOCKS5反代 = null;
@@ -90,15 +90,15 @@ const handle = ws => {
   const pool = new Pool(); let sock, w, r, info, first = true, rxBytes = 0, stalls = 0, reconns = 0;
   let lastAct = Date.now(), conn = false, reading = false; const tmrs = {}, pend = [];
   let pendBytes = 0, score = 1.0, lastChk = Date.now(), lastRx = 0, succ = 0, fail = 0;
-  let stats = { tot: 0, cnt: 0, big: 0, win: 0, ts: Date.now() }; let mode = 'direct', avgSz = 0, tputs = [];
+  let stats = { tot: 0, cnt: 0, big: 0, win: 0, ts: Date.now() }; let mode = 'adaptive', avgSz = 0, tputs = [];
   const updateMode = s => {
     stats.tot += s; stats.cnt++; if (s > 8192) stats.big++; avgSz = avgSz * 0.9 + s * 0.1; const now = Date.now();
     if (now - stats.ts > 1000) {
       const rate = stats.win; tputs.push(rate); if (tputs.length > 5) tputs.shift(); stats.win = s; stats.ts = now;
       const avg = tputs.reduce((a, b) => a + b, 0) / tputs.length;
       if (stats.cnt >= 20) {
-        if (avg > 20971520 && avgSz > 16384) { if (mode !== 'buffered') { mode = 'buffered'; pool.enableLarge(); } }
-        else if (avg < 10485760 || avgSz < 8192) { if (mode !== 'direct') mode = 'direct'; }
+        if (avg < 8388608 || avgSz < 4096) { if (mode !== 'buffered') { mode = 'buffered'; pool.enableLarge(); } }
+        else if (avg > 16777216 && avgSz > 12288) { if (mode !== 'direct') mode = 'direct'; }
         else { if (mode !== 'adaptive') mode = 'adaptive'; }
       }
     } else { stats.win += s; }
@@ -124,18 +124,19 @@ const handle = ws => {
             lastChk = now; lastRx = rxBytes;
           }
           if (mode === 'buffered') {
-            if (v.length < 32768) {
+            if (v.length < 16384) {
               batch.push(v); bSz += v.length;
-              if (bSz >= 131072) flush();
-              else if (!bTmr) bTmr = setTimeout(flush, avgSz > 16384 ? 5 : 20);
+              if (bSz >= 65536) flush();
+              else if (!bTmr) bTmr = setTimeout(flush, avgSz > 8192 ? 8 : 25);
             } else { flush(); if (ws.readyState === 1) ws.send(v); }
-          } else if (mode === 'adaptive') {
-            if (v.length < 4096) {
+          } else if (mode === 'direct') { flush(); if (ws.readyState === 1) ws.send(v); }
+          else if (mode === 'adaptive') {
+            if (v.length < 8192) {
               batch.push(v); bSz += v.length;
-              if (bSz >= 32768) flush();
-              else if (!bTmr) bTmr = setTimeout(flush, 15);
+              if (bSz >= 49152) flush();
+              else if (!bTmr) bTmr = setTimeout(flush, 12);
             } else { flush(); if (ws.readyState === 1) ws.send(v); }
-          } else { flush(); if (ws.readyState === 1) ws.send(v); }
+          }
         } if (done) { flush(); reading = false; reconn(); break; }
       }
     } catch (e) { flush(); if (bTmr) clearTimeout(bTmr); reading = false; fail++; reconn(); }
@@ -188,7 +189,7 @@ const handle = ws => {
     Object.values(tmrs).forEach(clearInterval); cleanSock();
     while (pend.length) pool.free(pend.shift());
     pendBytes = 0; stats = { tot: 0, cnt: 0, big: 0, win: 0, ts: Date.now() };
-    mode = 'direct'; avgSz = 0; tputs = []; pool.reset();
+    mode = 'adaptive'; avgSz = 0; tputs = []; pool.reset();
   };
   ws.addEventListener('message', async e => {
     try {
