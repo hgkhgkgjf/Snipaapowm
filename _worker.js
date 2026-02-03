@@ -39,10 +39,7 @@ export default {
             value: `${subProtocol}://${subConverter.toLowerCase()}`
         }, {
             label: '🔄 CM提供-负载均衡后端',
-            value: 'https://subapi.090227.xyz'
-        }, {
-            label: '⚖️ Lfree提供-负载均衡后端',
-            value: 'https://api.sub.zaoy.cn'
+            value: 'https://subapi.fxxk.dedyn.io'
         }, {
             label: '🚀 周润发提供-后端',
             value: 'https://subapi.zrfme.com'

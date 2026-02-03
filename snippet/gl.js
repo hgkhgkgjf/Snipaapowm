@@ -1,4 +1,4 @@
-const FIXED_UUID = '';// 建议修改为自己的规范化UUID，如不需要可留空
+const FIXED_UUID = '';// 建议修改为自己的规范化UUID，如不需要可留空 @GoodLiux优化版
 let 反代IP = '', 启用SOCKS5反代 = null, 启用SOCKS5全局反代 = false, 我的SOCKS5账号 = '', parsedSocks5Address = {};
 export default {
     async fetch(request) {
